@@ -53,6 +53,86 @@ dataset = function (n, pt, pi0, pi1) {
   return(dat)
 }
 
+###generate simulated data (true x follows standardized gammma) for Table S4
+dataset_gamma = function (n, pt, pi0, pi1) {
+  x1 = rgamma(n,shape=1,rate=1); x2=rgamma(n,shape = 2,rate=2)
+  x1 = scale(x1); x2 = scale(x2);
+  datae = rmvnorm(n = n, mean = c(0, 0), sigma = cove) 
+  e1 = datae[, 1]
+  e2 = datae[, 2]
+  #surrgorate variable for true variable x
+  w1 = aa1 + bb1 * x1 + e1
+  w2 = aa2 + bb2 * x2 + e2  
+  z = rbinom(n, 1, prob = pt)
+  b00 = trubet[1]; b10 = trubet[2]
+  b20 = trubet[3]; 
+  b01 = trubet[4]; b11 = trubet[5]
+  b21 = trubet[6];
+  y = numeric(n)
+  x10 = x1[z==0]; x11 = x1[z==1] 
+  x20 = x2[z==0]; x21 = x2[z==1]
+  n0 = sum(z==0); n1 = sum(z==1)
+  zo = numeric(n)
+  zo[z==1] = rbinom(n1, 1, 1-pi1)
+  zo[z==0] = rbinom(n0, 1, pi0)
+  oddrat0 = exp(b00 + b10 * x10 + b20* x20)
+  pr0 = oddrat0 / (1 + oddrat0)
+  y[z==0] = rbinom(n0, 1, pr0)
+  oddrat1 = exp(b01 + b11 * x11 + b21* x21)
+  pr1 = oddrat1 / (1 + oddrat1)
+  y[z==1] = rbinom(n1, 1, pr1)
+  dim(y) = c(n, 1)
+  dim(w1) = c(n, 1)
+  dim(w2) = c(n, 1)
+  dim(x1) = c(n, 1)
+  dim(x2) = c(n, 1)
+  dim(z) = c(n, 1)
+  dim(zo) = c(n, 1)
+  dat = cbind(y, w1, w2, x1, x2, z, zo)
+  return(dat)
+}
+
+##generate simulated data (true error model is multiplication error model) for Table S5
+dataset_mult = function (n, pt, pi0, pi1) {
+  #pt: binary variable
+  datax1 = rmvnorm(n = n, mean = c(0, 0), sigma = covt)
+  x1 = datax1[, 1]
+  x2 = datax1[, 2]
+  datae = rmvnorm(n = n, mean = c(0, 0), sigma = cove) 
+  e1 = datae[, 1]
+  e2 = datae[, 2]
+  #multiplication error model
+  w1 = x1*exp(e1)
+  w2 = x2*exp(e2)  
+  z = rbinom(n, 1, prob = pt)
+  b00 = trubet[1]; b10 = trubet[2]
+  b20 = trubet[3]; 
+  b01 = trubet[4]; b11 = trubet[5]
+  b21 = trubet[6];
+  y = numeric(n)
+  x10 = x1[z==0]; x11 = x1[z==1] 
+  x20 = x2[z==0]; x21 = x2[z==1]
+  n0 = sum(z==0); n1 = sum(z==1)
+  zo = numeric(n)
+  zo[z==1] = rbinom(n1, 1, 1-pi1)
+  zo[z==0] = rbinom(n0, 1, pi0)
+  oddrat0 = exp(b00 + b10 * x10 + b20* x20)
+  pr0 = oddrat0 / (1 + oddrat0)
+  y[z==0] = rbinom(n0, 1, pr0)
+  oddrat1 = exp(b01 + b11 * x11 + b21* x21)
+  pr1 = oddrat1 / (1 + oddrat1)
+  y[z==1] = rbinom(n1, 1, pr1)
+  dim(y) = c(n, 1)
+  dim(w1) = c(n, 1)
+  dim(w2) = c(n, 1)
+  dim(x1) = c(n, 1)
+  dim(x2) = c(n, 1)
+  dim(z) = c(n, 1)
+  dim(zo) = c(n, 1)
+  dat = cbind(y, w1, w2, x1, x2, z, zo)
+  return(dat)
+}
+
 
 #sample size: 3000 or 900 
 #(if we set n=9000 or 20000, we can obtain estimation results in Table S1 of supplementary materials)
@@ -70,16 +150,16 @@ if(choice == 1){
 
 #intercept terms in additive error model
 aa1 = aa2 = 0  
-#scale-bias terms in additive error model
+#scale-bias terms in additive error model. For Table S5, bb1 = bb2 = 1
 bb1 = bb2 = 0.4  
 #variacne-covariance of true variables
 covt = matrix(c(1, 0, 0, 1), 2, 2)  
 #correlation coefficient between error variables 
-#(note, if we set rho_uu=0.3, we can obtain estimation results in Table S2 of supplementary materials)
+#note, if we set rho_uu=0.3, we can obtain estimation results in Table S2 of supplementary materials
 rho_uu = 0.75
 ##variacne-covariance of error variables
 cove = matrix(c(0.8, rho_uu*sqrt(0.8*0.85), rho_uu*sqrt(0.8*0.85), 0.85), 2, 2)
-#set misclassification rates (three cases) 
+#set misclassification rates (three cases), when for table S4 and S5, we consider case 1 and case 3
 case = 1
 if(case == 1){
   po = 0.22
@@ -99,7 +179,7 @@ ccm = solve(delta)%*%delta_e
 c11 = ccm[1,1]; c12 = ccm[1,2]
 c21 = ccm[2,1]; c22 = ccm[2,2]
 
-#measurement error
+#assume additive measurement error model, compute \Sigma_wx=Cov(W,X) and \Sigma_ww=Var(W)
 sigwx = matrix(c(bb1 * covt[1, 1], bb1 * covt[1, 2], bb2 * covt[2, 1], bb2 *
                    covt[2, 2]), byrow = T, ncol = 2)
 sigxw = t(sigwx)
