@@ -9,7 +9,6 @@ library(mvtnorm)
 #input program settings
 #Set directory to the "R Code" folder
 # setwd(".../R Code") # change working directory to the current directory
-setwd("C:/Users/user/Dropbox/research/measurment_error/paper6_mem_mis_pa/simulation/Rcode")
 source("amle4_mis_setup.R")
 
 ###generate simulated data for tables 1-2, tables S1 and S2
